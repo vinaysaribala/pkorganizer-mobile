@@ -1,0 +1,7 @@
+{
+  "name": "PkOrganizer",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
