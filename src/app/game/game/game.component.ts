@@ -161,7 +161,7 @@ export class GameComponent implements OnInit, OnDestroy {
     }
 
     let game = this.form?.getRawValue();
-    game = {...game, totalBuyIns: game.players.reduce((sum: any, item: { buyIns: any; }) => sum + item.buyIns, 0), settlements: this.settlements };
+    game = { ...game, totalBuyIns: game.players.reduce((sum: any, item: { buyIns: any; }) => sum + item.buyIns, 0), settlements: this.settlements };
     try {
       if (this.game?.id) {
         await this.service.updateGame(game);
@@ -199,24 +199,27 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   get totalBuyIns() {
-    if (this.players) {
-      return this.players.reduce((sum: any, item: { buyIns: any; }) => sum + item.buyIns, 0)
+    let players = this.form?.get('players')?.getRawValue();
+    if (players) {
+      return players.reduce((sum: any, item: { buyIns: any; }) => sum + item.buyIns, 0)
     } else {
       return 0;
     }
   }
 
   get totalReturnBuyIns() {
-    if (this.players) {
-      return this.players.reduce((sum: any, item: { returnBuyIns?: any }) => sum + (item.returnBuyIns ?? 0), 0)
+    let players = this.form?.get('players')?.getRawValue();
+    if (players) {
+      return players.reduce((sum: any, item: { returnBuyIns?: any }) => sum + (item.returnBuyIns ?? 0), 0)
     } else {
       return 0;
     }
   }
 
   get totalBalance() {
-    if (this.players) {
-      return this.players.reduce((sum: any, item: { balance?: any; }) => sum + (item.balance ?? 0), 0)
+    let players = this.form?.get('players')?.getRawValue();
+    if (players) {
+      return players.reduce((sum: any, item: { balance?: any; }) => sum + (item.balance ?? 0), 0)
     } else {
       return 0;
     }
@@ -229,8 +232,8 @@ export class GameComponent implements OnInit, OnDestroy {
   async settle() {
     if (this.form?.valid) {
       let players = this.form.get('players')?.getRawValue();
-      if (players.some((p:any) => p.returnBuyIns === null || p.returnBuyIns === undefined)) {
-        let errorPlayers = players.filter((p:any) => !p.returnBuyIns).map((p: any) => p.name);
+      if (players.some((p: any) => p.returnBuyIns === null || p.returnBuyIns === undefined)) {
+        let errorPlayers = players.filter((p: any) => !p.returnBuyIns).map((p: any) => p.name);
         this.presentAlert(`Please update return buyins for the players ${errorPlayers.join(', ')}`);
       } else if (players.reduce((sum: any, item: { balance: any; }) => sum + item.balance, 0) === 0) {
         this.settleGame();
@@ -251,49 +254,49 @@ export class GameComponent implements OnInit, OnDestroy {
     while (lossPlayers.length > 0) {
       let result = this.settleMatch(profitPlayers, lossPlayers);
       profitPlayers = result.profitPlayers;
-      lossPlayers = result.lossPlayers; 
+      lossPlayers = result.lossPlayers;
       this.settleUmatch(profitPlayers, lossPlayers, result.hasRecord);
     }
   }
 
-  settleMatch(profitPlayers: Player[], lossPlayers: Player[]) : { profitPlayers: Player[], lossPlayers: Player[], hasRecord: boolean } {
+  settleMatch(profitPlayers: Player[], lossPlayers: Player[]): { profitPlayers: Player[], lossPlayers: Player[], hasRecord: boolean } {
     profitPlayers = profitPlayers.filter((p: Player) => (p.balance ?? 0) !== 0);
     lossPlayers = lossPlayers.filter((p: Player) => (p.balance ?? 0) !== 0);
     let hasRecord = false;
     for (let index = 0; index < lossPlayers.length; index++) {
-      let  lPlayer = lossPlayers[index];
+      let lPlayer = lossPlayers[index];
       let pPlayer = profitPlayers.find(pPlayer => pPlayer.balance! + lPlayer.balance! === 0);
       if (pPlayer) {
-        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: (pPlayer.balance ?? 0) * (this.game?.buyInValue ?? 0)  });
+        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: (pPlayer.balance ?? 0) * (this.game?.buyInValue ?? 0) });
         pPlayer.balance = 0;
         lPlayer.balance = 0
         hasRecord = true;
         break;
-      } 
+      }
     }
 
     return { profitPlayers: profitPlayers, lossPlayers: lossPlayers, hasRecord: hasRecord };
   }
-  
+
   settleUmatch(profitPlayers: Player[], lossPlayers: Player[], callMatch: boolean): { profitPlayers: Player[], lossPlayers: Player[] } {
     if (callMatch) {
       let result = this.settleMatch(profitPlayers, lossPlayers);
       profitPlayers = result.profitPlayers;
       lossPlayers = result.lossPlayers;
     }
-    
+
     for (let index = 0; index < lossPlayers.length; index++) {
-      let  lPlayer = lossPlayers[index]
+      let lPlayer = lossPlayers[index]
       let pPlayer = profitPlayers.find(pPlayer => pPlayer.balance! + lPlayer.balance! !== 0);
-      if(pPlayer) {
+      if (pPlayer) {
         let adjustBalance = (lPlayer.balance! * -1) > (pPlayer.balance!) ? pPlayer.balance! : (lPlayer.balance! * -1);
-        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: adjustBalance * (this.game?.buyInValue ?? 0)  });
+        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: adjustBalance * (this.game?.buyInValue ?? 0) });
         pPlayer.balance! -= adjustBalance;
         lPlayer.balance! += adjustBalance;
         break;
       }
     }
-    
+
 
     return { profitPlayers: profitPlayers, lossPlayers: lossPlayers };
   }
