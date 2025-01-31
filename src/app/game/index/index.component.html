@@ -1,0 +1,37 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Games</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="ion-padding">
+    <ion-card *ngFor="let game of games">
+        <ion-card-header>
+          <ion-card-title>{{game.playDate}}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>BuyIn Chips: {{game.buyInPoints}}</p>
+          <p>BuyIn Value: {{game.buyInValue}}</p>
+          <p>Total BuyIns: {{game.totalBuyIns}}</p>
+          <p>Status: {{game.isSettled ? 'Settlled' : 'Playing'}}</p>
+          <ion-button expand="block" [routerLink]="['/game', 'edit', game.id]" color="secondary">
+            Edit
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+  </div>
+</ion-content>
+<ion-footer collapse="fade">
+  <ion-toolbar>
+    <ion-buttons>
+      <ion-button expand="block" routerLink="/game/add" color="primary">
+        Add
+        <ion-icon slot="start" name="bag-add-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

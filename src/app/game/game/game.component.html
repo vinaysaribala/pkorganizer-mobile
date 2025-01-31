@@ -1,0 +1,147 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{name}}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div *ngIf="form" [formGroup]="form" class="ion-padding">
+    <ion-list>
+      <ion-item>
+        <ion-input label="Play Date" type="text" labelPlacement="floating" errorText="Play date is required."
+          formControlName="playDate"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="BuyIn amount" type="number" step="5" min="5" labelPlacement="floating"
+          errorText="BuyIn amount is required." formControlName="buyInValue"
+          [disabled]="game?.isSettled ?? false"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input label="BuyIn Chips" type="number" step="100" min="100" labelPlacement="floating"
+          errorText="BuyIn chips are required." formControlName="buyInPoints"
+          [disabled]="game?.isSettled ?? false"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-checkbox labelPlacement="floating" formControlName="isSettled" [disabled]="game?.isSettled ?? false">Is
+          Settled</ion-checkbox>
+      </ion-item>
+      <ion-item>
+        <ion-select placeholder="Select players" formControlName="players" label="Players" labelPlacement="floating"
+          [multiple]="true" [selectedText]="getSelectedPlayersText()" errorText="Players are required."
+          [compareWith]="compareWithFn" [disabled]="game?.isSettled ?? false">
+          @for (player of players; track player) {
+          <ion-select-option [value]="player">{{ player.name }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+    </ion-list>
+    <ion-segment>
+      <ion-segment-button value="playersegment" content-id="playersegment">
+        <ion-label>Players</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="settlementsegment" content-id="settlementsegment">
+        <ion-label>Settlements</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+    <ion-segment-view>
+      <ion-segment-content id="playersegment">
+        <ion-item-divider class="ion-padding">
+          <ion-label>Players</ion-label>
+          <ion-badge slot="end" color="primary">BuyIn's</ion-badge>
+          <ion-badge slot="end" color="warning">Returns</ion-badge>
+          <ion-badge slot="end" color="success">Balance</ion-badge>
+        </ion-item-divider>
+        <ion-list>
+          <ion-item *ngFor="let player of form.get('players')?.getRawValue()">
+            <ion-button fill="clear" expand="block" (click)="editPlayer(player)">
+              <ion-icon slot="start" name="pencil-outline"></ion-icon>
+              {{player.name}}
+            </ion-button>
+            <ion-badge slot="end" color="primary">{{player.buyIns}}</ion-badge>
+            <ion-badge slot="end" color="warning">{{player.returnBuyIns ?? 0}}</ion-badge>
+            <ion-badge slot="end"
+              [color]="(player.balance ?? 0) >= 0 ? player.balance > 0 ? 'success' : 'light' : 'danger'">{{player.balance
+              ?? 0}}</ion-badge>
+          </ion-item>
+        </ion-list>
+        <ion-item-divider class="ion-padding">
+          <ion-label>Final</ion-label>
+          <ion-badge slot="end" color="primary">{{totalBuyIns}}</ion-badge>
+          <ion-badge slot="end" color="warning">{{totalReturnBuyIns}}</ion-badge>
+          <ion-badge slot="end"
+            [color]="(totalBalance ?? 0) >= 0 ? totalBalance > 0 ? 'success' : 'light' : 'danger'">{{totalBalance}}</ion-badge>
+        </ion-item-divider>
+      </ion-segment-content>
+      <ion-segment-content id="settlementsegment">
+        <ion-list>
+          <ion-item *ngFor="let settlement of game?.settlements">
+            <ion-text color="primary">
+              {{profileName(settlement.fromPlayerId)}}
+            </ion-text>
+            <ion-text>&nbsp;pays&nbsp;</ion-text>
+            <ion-text color="tertiary">
+              {{profileName(settlement.toPlayerId)}}
+            </ion-text>
+            <ion-badge slot="end" color="light">{{settlement.amount | currency}}</ion-badge>
+          </ion-item>
+        </ion-list>
+      </ion-segment-content>
+    </ion-segment-view>
+  </div>
+  <ion-modal [isOpen]="isModalOpen">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{playerForm?.get('name')?.getRawValue()}}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeEditPlayer()">Close</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <div *ngIf="playerForm" [formGroup]="playerForm" class="ion-padding">
+          <ion-list>
+            <ion-item>
+              <ion-input label="BuyIn's" type="number" step="1" min="1" labelPlacement="floating"
+                errorText="BuyIn's are required." formControlName="buyIns"></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-input label="Returns" type="number" step="0.5" min="0" labelPlacement="floating"
+                errorText="Returnss are required." formControlName="returnBuyIns"></ion-input>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-content>
+      <ion-footer>
+        <ion-buttons>
+          <ion-button slot="end" color="primary" (click)="savePlayer()" [disabled]="game?.isSettled ?? false">
+            <ion-icon slot="start" name="save"></ion-icon>
+            Save
+          </ion-button>
+        </ion-buttons>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>
+</ion-content>
+<ion-footer collapse="fade">
+  <ion-toolbar>
+    <ion-buttons>
+      <ion-button color="primary" (click)="save()" [disabled]="game?.isSettled ?? false">
+        <ion-icon slot="start" name="save"></ion-icon>
+        Save
+      </ion-button>
+      <ion-button color="secondary" (click)="cancel()">
+        <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+        Cancel
+      </ion-button>
+      <ion-button color="primary" (click)="settle()" [disabled]="game?.isSettled ?? false">
+        <ion-icon slot="start" name="checkbox-outline"></ion-icon>
+        Settle
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>
