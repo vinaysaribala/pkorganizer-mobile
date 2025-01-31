@@ -195,7 +195,7 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   cancel() {
-
+    this.router.navigate(['/']);
   }
 
   get totalBuyIns() {

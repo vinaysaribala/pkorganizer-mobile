@@ -1,8 +1,8 @@
 {
-  "name": "PkOrganizer",
+  "name": "pokerbuddy",
   "version": "0.0.1",
-  "author": "Ionic Framework",
-  "homepage": "https://ionicframework.com/",
+  "author": "Vinay Saribala",
+  "homepage": "",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
