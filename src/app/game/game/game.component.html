@@ -4,7 +4,9 @@
       <ion-menu-button></ion-menu-button>
       <ion-back-button></ion-back-button>
     </ion-buttons>
-    <ion-title>{{name}}</ion-title>
+    <ion-title>
+      {{name}}
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -141,6 +143,10 @@
       <ion-button color="primary" (click)="settle()" [disabled]="game?.isSettled ?? false">
         <ion-icon slot="start" name="checkbox-outline"></ion-icon>
         Settle
+      </ion-button>
+      <ion-button color="primary" (click)="presentDeleteConfirm()">
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        Delete
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

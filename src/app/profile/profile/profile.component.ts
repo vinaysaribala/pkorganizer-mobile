@@ -15,7 +15,7 @@ import { ToastController } from '@ionic/angular';
 export class ProfileComponent implements OnInit, OnDestroy {
   form?: FormGroup;
   profileId?: number;
-  profile?: Profile
+  profile?: Profile = {} as Profile
   readonly destroying$ = new Subject<void>();
   name: string = 'Add New';
 

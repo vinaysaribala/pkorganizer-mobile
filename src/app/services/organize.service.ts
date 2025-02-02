@@ -18,9 +18,17 @@ export class OrganizeService {
 
   private async loadData() {
     const profiles = await this.storageService.get<Profile[]>(this.PROFILE_STORAGE_KEY) || [];
-    this.profiles.next(profiles);
+    this.profiles.next(this.sortProfiles(profiles));
     const games = await this.storageService.get<Game[]>(this.GAME_STORAGE_KEY) || [];
-    this.games.next(games);
+    this.games.next(this.sortGames(games));
+  }
+
+  sortProfiles(profiles: Profile[]): Profile[] {
+    return profiles.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  sortGames(games: Game[]): Game[] {
+    return games.sort((a, b) => b.id - a.id);
   }
 
   getProfiles(): Observable<Profile[]> {
@@ -66,20 +74,20 @@ export class OrganizeService {
     
     const updatedGames = [...currentGames, newGame];
     await this.storageService.set(this.GAME_STORAGE_KEY, updatedGames);
-    this.games.next(updatedGames);
+    this.games.next(this.sortGames(updatedGames));
   }
 
   async updateGame(game: Game): Promise<void> {
     const currentGames = this.games.value;
     const updatedGames = currentGames.map(g => g.id === game.id ? game : g);
     await this.storageService.set(this.GAME_STORAGE_KEY, updatedGames);
-    this.games.next(updatedGames);
+    this.games.next(this.sortGames(updatedGames));
   }
 
   async deleteGame(id: number): Promise<void> {
     const currentGames = this.games.value;
     const updatedGames = currentGames.filter(g => g.id !== id);
     await this.storageService.set(this.GAME_STORAGE_KEY, updatedGames);
-    this.games.next(updatedGames);
+    this.games.next(this.sortGames(updatedGames));
   }
 }

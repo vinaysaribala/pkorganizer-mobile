@@ -14,17 +14,13 @@
 <ion-content>
   <div class="ion-padding">
     <div class="profiles-grid">
-      <ion-card *ngFor="let profile of profiles">
+      <ion-card *ngFor="let profile of profiles" [routerLink]="['/profile', 'edit', profile.id]">
         <ion-card-header>
           <ion-card-title>{{profile.name}}</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Phone: {{profile.phone}}</p>
           <p>Email: {{profile.email}}</p>
-          <ion-button expand="block" [routerLink]="['/profile', 'edit', profile.id]" color="secondary">
-            <ion-icon slot="start" name="pencil-outline"></ion-icon>
-            Edit
-          </ion-button>
         </ion-card-content>
       </ion-card>
     </div>

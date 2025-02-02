@@ -41,7 +41,8 @@ export class GameComponent implements OnInit, OnDestroy {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
-    });
+    }).replace(/[, ]/g, ' ');
+
     return new FormBuilder().group({
       id: new FormControl({ value: model ? model.id : 0, disabled: model?.isSettled }),
       playDate: new FormControl({ value: model ? model.name : date, disabled: true }),
@@ -262,12 +263,13 @@ export class GameComponent implements OnInit, OnDestroy {
   settleMatch(profitPlayers: Player[], lossPlayers: Player[]): { profitPlayers: Player[], lossPlayers: Player[], hasRecord: boolean } {
     profitPlayers = profitPlayers.filter((p: Player) => (p.balance ?? 0) !== 0);
     lossPlayers = lossPlayers.filter((p: Player) => (p.balance ?? 0) !== 0);
+    let buyInValue = this.form?.get('buyInValue')?.getRawValue();
     let hasRecord = false;
     for (let index = 0; index < lossPlayers.length; index++) {
       let lPlayer = lossPlayers[index];
       let pPlayer = profitPlayers.find(pPlayer => pPlayer.balance! + lPlayer.balance! === 0);
       if (pPlayer) {
-        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: (pPlayer.balance ?? 0) * (this.game?.buyInValue ?? 0) });
+        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: (pPlayer.balance ?? 0) * (buyInValue ?? 0) });
         pPlayer.balance = 0;
         lPlayer.balance = 0
         hasRecord = true;
@@ -285,12 +287,13 @@ export class GameComponent implements OnInit, OnDestroy {
       lossPlayers = result.lossPlayers;
     }
 
+    let buyInValue = this.form?.get('buyInValue')?.getRawValue();
     for (let index = 0; index < lossPlayers.length; index++) {
       let lPlayer = lossPlayers[index]
       let pPlayer = profitPlayers.find(pPlayer => pPlayer.balance! + lPlayer.balance! !== 0);
       if (pPlayer) {
         let adjustBalance = (lPlayer.balance! * -1) > (pPlayer.balance!) ? pPlayer.balance! : (lPlayer.balance! * -1);
-        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: adjustBalance * (this.game?.buyInValue ?? 0) });
+        this.settlements.push({ toPlayerId: pPlayer?.profileId!, fromPlayerId: lPlayer.profileId, amount: adjustBalance * (buyInValue ?? 0) });
         pPlayer.balance! -= adjustBalance;
         lPlayer.balance! += adjustBalance;
         break;
@@ -299,6 +302,32 @@ export class GameComponent implements OnInit, OnDestroy {
 
 
     return { profitPlayers: profitPlayers, lossPlayers: lossPlayers };
+  }
+
+  async deleteItem(id?: number) {
+    await this.service.deleteGame(id!);
+    this.router.navigate(['/game']);
+  }
+
+  async presentDeleteConfirm() {
+    const alert = await this.alertController.create({
+      header: 'Confirm Delete',
+      message: 'Are you sure you want to delete the game?',
+      buttons: [
+        {
+          text: 'Cancel',
+          role: 'cancel'
+        },
+        {
+          text: 'Delete',
+          handler: () => {
+            this.deleteItem(this.gameId);
+          }
+        }
+      ]
+    });
+  
+    await alert.present();
   }
 
 }

@@ -3,26 +3,29 @@
     <ion-buttons slot="start">
       <ion-back-button></ion-back-button>
     </ion-buttons>
-    <ion-title>Games</ion-title>
+    <ion-title>
+      <ion-icon name="file-tray-stacked-outline"></ion-icon>
+      Games
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
   <div class="ion-padding">
-    <ion-card *ngFor="let game of games">
-        <ion-card-header>
-          <ion-card-title>{{game.playDate}}</ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <p>BuyIn Chips: {{game.buyInPoints}}</p>
-          <p>BuyIn Value: {{game.buyInValue}}</p>
-          <p>Total BuyIns: {{game.totalBuyIns}}</p>
-          <p>Status: {{game.isSettled ? 'Settlled' : 'Playing'}}</p>
-          <ion-button expand="block" [routerLink]="['/game', 'edit', game.id]" color="secondary">
-            Edit
-          </ion-button>
-        </ion-card-content>
-      </ion-card>
+    <ion-card *ngFor="let game of games" [routerLink]="['/game', 'edit', game.id]">
+      <ion-card-header>
+        <ion-card-title>
+          {{game.playDate}}
+        </ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Total Players: {{game.players.length}}</p>
+        <p>BuyIn Chips: {{game.buyInPoints}}</p>
+        <p>BuyIn Value: {{game.buyInValue}}</p>
+        <p>Total BuyIns: {{game.totalBuyIns}}</p>
+        <p>Status: {{game.isSettled ? 'Settlled' : 'Playing'}}</p>
+      </ion-card-content>
+    </ion-card>
   </div>
 </ion-content>
 <ion-footer collapse="fade">
