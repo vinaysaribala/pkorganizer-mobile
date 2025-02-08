@@ -156,7 +156,7 @@ export class GameComponent implements OnInit, OnDestroy {
     return o1 && o2 ? o1.profileId === o2.profileId : o1 === o2;
   }
 
-  async save() {
+  async save(navigateAway: boolean = true) {
     if (this.form?.invalid) {
       return;
     }
@@ -171,7 +171,9 @@ export class GameComponent implements OnInit, OnDestroy {
       }
 
       await this.presentToast('Game save success!', 'checkmark-outline');
-      this.router.navigate(['/game']);
+      if (navigateAway || (this.gameId ?? 0) === 0 ) {
+        this.router.navigate(['/game']);
+      }
     } catch (error) {
       await this.presentToast('Game save failed!', 'close-outline');
     }
@@ -193,6 +195,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
     this.setPlayer(this.playerForm?.getRawValue());
     this.isModalOpen = false;
+    this.save(false);
   }
 
   cancel() {
