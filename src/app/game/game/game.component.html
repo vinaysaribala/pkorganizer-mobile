@@ -28,7 +28,7 @@
           [disabled]="game?.isSettled ?? false"></ion-input>
       </ion-item>
       <ion-item>
-        <ion-checkbox labelPlacement="floating" formControlName="isSettled" [disabled]="game?.isSettled ?? false">Is
+        <ion-checkbox labelPlacement="floating" formControlName="isSettled" [disabled]="true">Is
           Settled</ion-checkbox>
       </ion-item>
       <ion-item>
@@ -128,6 +128,54 @@
       </ion-footer>
     </ng-template>
   </ion-modal>
+  <ion-modal [isOpen]="isSettleModalOpen">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Add Custom Settlement</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeSettlement()">Close</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <div *ngIf="settleForm" [formGroup]="settleForm" class="ion-padding">
+          <ion-list>
+            <ion-item>
+              <ion-select placeholder="Select From player" formControlName="fromPlayerId" label="From Player" labelPlacement="floating"
+                [multiple]="false" errorText="Player is required."
+                [compareWith]="compareWithFn" [disabled]="game?.isSettled ?? false">
+                @for (player of getLossPlayers(); track player) {
+                <ion-select-option [value]="player">{{ player.name }}</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+            <ion-item>
+              <ion-select placeholder="Select To player" formControlName="toPlayerId" label="To Player" labelPlacement="floating"
+                [multiple]="false" errorText="Player is required."
+                [compareWith]="compareWithFn" [disabled]="game?.isSettled ?? false">
+                @for (player of getGainPlayers(); track player) {
+                <ion-select-option [value]="player">{{ player.name }}</ion-select-option>
+                }
+              </ion-select>
+            </ion-item>
+            <ion-item>
+              <ion-input label="Amount" type="number" step="5" min="5" labelPlacement="floating"
+                [errorText]="settleAmountErrorMessage" formControlName="amount"></ion-input>
+            </ion-item>
+          </ion-list>
+        </div>
+      </ion-content>
+      <ion-footer>
+        <ion-buttons>
+          <ion-button slot="end" color="primary" (click)="saveCustomSettle()" [disabled]="game?.isSettled ?? false">
+            <ion-icon slot="start" name="save"></ion-icon>
+            Save
+          </ion-button>
+        </ion-buttons>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>
 </ion-content>
 <ion-footer collapse="fade">
   <ion-toolbar>
@@ -143,6 +191,10 @@
       <ion-button color="primary" (click)="settle()" [disabled]="game?.isSettled ?? false">
         <ion-icon slot="start" name="checkbox-outline"></ion-icon>
         Settle
+      </ion-button>
+      <ion-button color="primary" (click)="customSettle()" [disabled]="game?.isSettled ?? false">
+        <ion-icon slot="start" name="checkbox-outline"></ion-icon>
+        Custom Settle
       </ion-button>
       <ion-button color="primary" (click)="presentDeleteConfirm()">
         <ion-icon slot="start" name="trash-outline"></ion-icon>

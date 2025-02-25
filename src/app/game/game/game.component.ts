@@ -19,6 +19,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
   form?: FormGroup;
   playerForm?: FormGroup;
+  settleForm?: FormGroup;
   gameId?: number;
   game?: Game;
   name: string = 'Add Game'
@@ -26,6 +27,7 @@ export class GameComponent implements OnInit, OnDestroy {
   profiles: Profile[] = [];
   settlements: Settlement[] = [];
   isModalOpen: boolean = false;
+  isSettleModalOpen: boolean = false;
   readonly destroying$ = new Subject<void>();
 
   constructor(private service: OrganizeService,
@@ -62,6 +64,14 @@ export class GameComponent implements OnInit, OnDestroy {
     });
   }
 
+  public static buildSettleForm(model: any): FormGroup {
+    return new FormBuilder().group({
+      fromPlayerId: new FormControl({ value: model?.fromPlayerId, disabled: false }, [Validators.required]),
+      toPlayerId: new FormControl({ value: model?.toPlayerId, disabled: false }, [Validators.required]),
+      amount: new FormControl({ value: model?.amount, disabled: false }, [Validators.required]),
+    });
+  }
+
   ngOnDestroy(): void {
     this.destroying$.next();
     this.destroying$.complete();
@@ -79,6 +89,7 @@ export class GameComponent implements OnInit, OnDestroy {
               if (gameData) {
                 this.name = gameData.playDate;
                 this.game = gameData;
+                this.settlements = this.game.settlements ?? [];
                 this.form?.patchValue(this.game);
                 this.loadProfiles();
               }
@@ -188,6 +199,10 @@ export class GameComponent implements OnInit, OnDestroy {
     this.isModalOpen = false;
   }
 
+  closeSettlement() {
+    this.isSettleModalOpen = false;
+  }
+
   savePlayer() {
     if (this.playerForm?.invalid) {
       return;
@@ -255,6 +270,22 @@ export class GameComponent implements OnInit, OnDestroy {
     let players = this.form?.get('players')?.getRawValue();
     let profitPlayers = players.filter((p: Player) => (p.balance ?? 0) > 0);
     let lossPlayers = players.filter((p: Player) => (p.balance ?? 0) < 0);
+
+    // Adjust custom settlements
+    profitPlayers.forEach((pPlayer: Player) => {
+      let customSettledAmount = (this.game?.settlements.filter(s => s.toPlayerId === pPlayer.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0))
+      if (customSettledAmount && customSettledAmount > 0) {
+        pPlayer.balance! -= customSettledAmount / this.game?.buyInValue!;
+      }
+    });
+
+    lossPlayers.forEach((lPlayer: Player) => {
+      let customSettledAmount = (this.game?.settlements.filter(s => s.fromPlayerId === lPlayer.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0))
+      if (customSettledAmount && customSettledAmount > 0) {
+        lPlayer.balance! += customSettledAmount! / this.game?.buyInValue!;
+      }
+    });
+
     while (lossPlayers.length > 0) {
       let result = this.settleMatch(profitPlayers, lossPlayers);
       profitPlayers = result.profitPlayers;
@@ -333,4 +364,66 @@ export class GameComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
+  getLossPlayers(): Player[] {
+    return this.players.filter(p => p.balance  && p.balance + ((this.game?.settlements?.filter(s => s.fromPlayerId === p.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0)) / this.game?.buyInValue!) < 0)
+  }
+
+  getGainPlayers(): Player[] {
+    return this.players.filter(p => p.balance  && p.balance - ((this.game?.settlements?.filter(s => s.toPlayerId === p.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0)) / this.game?.buyInValue!) > 0)
+  }
+
+  saveCustomSettle() {
+    if (this.settleForm?.valid) {
+      let value = this.settleForm.getRawValue();
+      this.settlements.push({ fromPlayerId: value.fromPlayerId.profileId, toPlayerId: value.toPlayerId.profileId, amount: value.amount  } as Settlement);
+      this.game!.settlements = this.settlements;
+      this.isSettleModalOpen = false;
+      this.settleForm = undefined;
+      this.save(false);
+    }
+  }
+
+  get settleAmountErrorMessage() {
+    if(this.settleForm?.get('amount')?.hasError('max'))
+    {
+      return `Amount can not exceed ${this.settleForm?.get('amount')?.errors?.['max'].max}`
+    }
+
+    return 'Amount is required.'
+  }
+
+  customSettle() {
+    this.settleForm = GameComponent.buildSettleForm({});
+    this.settleForm.get('fromPlayerId')?.valueChanges.pipe(takeUntil(this.destroying$)).subscribe({
+      next: _ => {
+        this.setSettleAmountValidation();
+      }
+    });
+
+    this.settleForm.get('toPlayerId')?.valueChanges.pipe(takeUntil(this.destroying$)).subscribe({
+      next: _ => {
+        this.setSettleAmountValidation();
+      }
+    });
+
+    this.isSettleModalOpen = true;
+  }
+
+
+  private setSettleAmountValidation() {
+    let remainingFromBalance = Number.MAX_VALUE;
+    let remainingToBalance = Number.MAX_VALUE;
+    let fromPlayer = this.settleForm?.get('fromPlayerId')?.value
+    let toPlayer = this.settleForm?.get('toPlayerId')?.value;
+
+    if (fromPlayer) {
+      remainingFromBalance = (fromPlayer.balance! * -(this.game?.buyInValue ?? 0)) - (this.game?.settlements.filter(s => s.fromPlayerId === fromPlayer.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0));
+    }
+
+    if (toPlayer) {
+      remainingToBalance = (toPlayer.balance! * (this.game?.buyInValue ?? 0)) - (this.game?.settlements.filter(s => s.toPlayerId === toPlayer.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0));
+    }
+
+    this.settleForm?.get('amount')?.setValidators(Validators.max(Math.min(remainingFromBalance, remainingToBalance)));
+  }
 }
