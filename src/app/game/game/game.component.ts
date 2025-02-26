@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Game } from '../../model/game';
 import { OrganizeService } from '../../services/organize.service';
@@ -8,6 +8,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { Player } from '../../model/player';
 import { Profile } from '../../model/profile';
 import { Settlement } from '../../model/settlement';
+import { EmailService } from '../../services/email.service';
 
 @Component({
   selector: 'app-game',
@@ -34,7 +35,9 @@ export class GameComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private toastController: ToastController,
-    private alertController: AlertController) { }
+    private alertController: AlertController,
+    private emailService: EmailService,
+    private cdr: ChangeDetectorRef) { }
 
   public static buildForm(model: any): FormGroup {
     let date = new Date().toLocaleString('en-US', {
@@ -50,7 +53,7 @@ export class GameComponent implements OnInit, OnDestroy {
       playDate: new FormControl({ value: model ? model.name : date, disabled: true }),
       buyInValue: new FormControl({ value: model ? model.buyInValue : 10, disabled: model?.isSettled }, [Validators.required]),
       buyInPoints: new FormControl({ value: model ? model.buyInPoints : 200, disabled: model?.isSettled }, [Validators.required]),
-      isSettled: new FormControl({ value: model ? model.isSettled : false, disabled: model?.isSettled }, [Validators.required]),
+      isSettled: new FormControl({ value: model ? model.isSettled : false, disabled: true }, [Validators.required]),
       players: new FormControl({ value: model ? model.players : [], disabled: model?.isSettled }, [Validators.required]),
     });
   }
@@ -91,6 +94,9 @@ export class GameComponent implements OnInit, OnDestroy {
                 this.game = gameData;
                 this.settlements = this.game.settlements ?? [];
                 this.form?.patchValue(this.game);
+                if (this.game.isSettled) {
+                  this.form?.disable();
+                }
                 this.loadProfiles();
               }
             },
@@ -116,6 +122,7 @@ export class GameComponent implements OnInit, OnDestroy {
               this.setPlayer(player);
             });
           }
+          this.cdr.detectChanges();
         }
       },
       error: async () => {
@@ -182,6 +189,9 @@ export class GameComponent implements OnInit, OnDestroy {
       }
 
       await this.presentToast('Game save success!', 'checkmark-outline');
+      if (this.game?.isSettled) {
+        this.emailService.sendEmail(this.settlements);
+      }
       if (navigateAway || (this.gameId ?? 0) === 0 ) {
         this.router.navigate(['/game']);
       }
@@ -211,6 +221,7 @@ export class GameComponent implements OnInit, OnDestroy {
     this.setPlayer(this.playerForm?.getRawValue());
     this.isModalOpen = false;
     this.save(false);
+    this.cdr.detectChanges();
   }
 
   cancel() {
@@ -252,7 +263,7 @@ export class GameComponent implements OnInit, OnDestroy {
     if (this.form?.valid) {
       let players = this.form.get('players')?.getRawValue();
       if (players.some((p: any) => p.returnBuyIns === null || p.returnBuyIns === undefined)) {
-        let errorPlayers = players.filter((p: any) => !p.returnBuyIns).map((p: any) => p.name);
+        let errorPlayers = players.filter((p: any) => p.returnBuyIns === null || p.returnBuyIns === undefined).map((p: any) => p.name);
         this.presentAlert(`Please update return buyins for the players ${errorPlayers.join(', ')}`);
       } else if (players.reduce((sum: any, item: { balance: any; }) => sum + item.balance, 0) === 0) {
         this.settleGame();

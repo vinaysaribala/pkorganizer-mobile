@@ -20,6 +20,17 @@
       <ion-item>
         <ion-input label="Phone" type="tel" labelPlacement="floating" errorText="Invalid Phone" placeholder="+1 (xxx) xxx-xxxx" formControlName="phone"></ion-input>
       </ion-item>
+      <ion-item>
+        <ion-select placeholder="Select Carrier" formControlName="carrier" label="Carrier" labelPlacement="floating"
+          [multiple]="false" errorText="Carrier are required.">
+          @for (carrier of carriers; track carrier.value) {
+          <ion-select-option [value]="carrier.value">{{ carrier.label }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-checkbox labelPlacement="floating" formControlName="optIn">Opt In for communication</ion-checkbox>
+      </ion-item>
     </ion-list>
   </div>
 </ion-content>

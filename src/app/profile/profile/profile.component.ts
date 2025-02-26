@@ -18,6 +18,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
   profile?: Profile = {} as Profile
   readonly destroying$ = new Subject<void>();
   name: string = 'Add New';
+  carriers = [
+    { label: 'At&t', value: 'att' },
+    { label: 'T-Mobile', value: 'tmobile' },
+    { label: 'Verizon', value: 'verizon' },
+    { label: 'Sprint', value: 'sprint' },
+    { label: 'Boost', value: 'boost' },
+    { label: 'Metro Pcs', value: 'metropcs' }
+  ]
 
   constructor(private service: OrganizeService,
     private router: Router,
@@ -29,7 +37,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
       id: new FormControl({ value: model?.id, disabled: false }),
       name: new FormControl({ value: model?.name, disabled: false }, [Validators.required]),
       phone: new FormControl({ value: model?.phone, disabled: false }),
+      carrier: new FormControl({ value: model?.carrier, disabled: false }),
       email: new FormControl({ value: model?.email, disabled: false }, [Validators.email]),
+      optIn: new FormControl({ value: model?.optIn ?? false, disabled: false})
     });
   }
 
