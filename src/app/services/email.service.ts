@@ -29,11 +29,11 @@ export class EmailService {
           if (data) {
             this.profiles = data.filter(d => settlements.some(s => s.fromPlayerId === d.id) || settlements.some(s => s.toPlayerId === d.id));
             let message = settlements.map(s => `${this.profiles.find(p => p.id === s.fromPlayerId)?.name} pays ${s.amount} ${this.profiles.find(p => p.id === s.toPlayerId)?.name}`).join('\n');
-            let phoneRecipients = this.profiles.filter((p: Profile) => p.phone && this.carrierGateways[p.carrier]).map((p: Profile) => {
+            let phoneRecipients = this.profiles.filter((p: Profile) => p.optIn && p.phone && this.carrierGateways[p.carrier]).map((p: Profile) => {
               return `${p.phone}${this.carrierGateways[p.carrier]}`;
             });
 
-            let recipients = phoneRecipients.concat(this.profiles.filter((p: Profile) => p.email).map((p: Profile) => { return p.email }));
+            let recipients = phoneRecipients.concat(this.profiles.filter((p: Profile) => p.optIn && p.email).map((p: Profile) => { return p.email }));
 
             let recipient = recipients.join(',');
             const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent('Poker Buddy')}&body=${encodeURIComponent(message)}`;
