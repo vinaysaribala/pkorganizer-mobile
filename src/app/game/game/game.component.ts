@@ -190,7 +190,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
       await this.presentToast('Game save success!', 'checkmark-outline');
       if (this.game?.isSettled) {
-        this.emailService.sendEmail(this.settlements);
+        this.emailService.sendEmail(this.settlements, this.game.playDate);
       }
       if (navigateAway || (this.gameId ?? 0) === 0 ) {
         this.router.navigate(['/game']);
@@ -436,5 +436,9 @@ export class GameComponent implements OnInit, OnDestroy {
     }
 
     this.settleForm?.get('amount')?.setValidators(Validators.max(Math.min(remainingFromBalance, remainingToBalance)));
+  }
+
+  segmentChanged(_: any) {
+    this.cdr.detectChanges();
   }
 }

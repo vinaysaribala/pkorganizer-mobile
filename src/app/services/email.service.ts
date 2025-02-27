@@ -22,7 +22,7 @@ export class EmailService {
   };
 
 
-  sendEmail(settlements: Settlement[]) {
+  sendEmail(settlements: Settlement[], playDate: string) {
     if (settlements && settlements.length > 0) {
       this.profileService.getProfiles().subscribe({
         next: (data: Profile[]) => {
@@ -36,7 +36,7 @@ export class EmailService {
             let recipients = phoneRecipients.concat(this.profiles.filter((p: Profile) => p.optIn && p.email).map((p: Profile) => { return p.email }));
 
             let recipient = recipients.join(',');
-            const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent('Poker Buddy')}&body=${encodeURIComponent(message)}`;
+            const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent(`Poker Buddy ${playDate}`)}&body=${encodeURIComponent(message)}`;
 
             // Open the mail client
             window.open(mailtoUrl, '_system');

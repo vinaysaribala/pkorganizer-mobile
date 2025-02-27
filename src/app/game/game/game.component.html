@@ -41,7 +41,7 @@
         </ion-select>
       </ion-item>
     </ion-list>
-    <ion-segment>
+    <ion-segment (ionChange)="segmentChanged($event)">
       <ion-segment-button value="playersegment" content-id="playersegment">
         <ion-label>Players</ion-label>
       </ion-segment-button>
@@ -124,6 +124,10 @@
             <ion-icon slot="start" name="save"></ion-icon>
             Save
           </ion-button>
+          <ion-button slot="end" color="primary" (click)="closeEditPlayer()">
+            <ion-icon slot="start" name="close-circle-outline"></ion-icon>
+            Close
+          </ion-button>
         </ion-buttons>
       </ion-footer>
     </ng-template>
@@ -172,6 +176,10 @@
             <ion-icon slot="start" name="save"></ion-icon>
             Save
           </ion-button>
+          <ion-button slot="end" color="primary" (click)="closeSettlement()">
+            <ion-icon slot="start" name="close-circle-outline"></ion-icon>
+            Close
+          </ion-button>
         </ion-buttons>
       </ion-footer>
     </ng-template>
@@ -179,26 +187,21 @@
 </ion-content>
 <ion-footer collapse="fade">
   <ion-toolbar>
-    <ion-buttons>
-      <ion-button color="primary" (click)="save()" [disabled]="game?.isSettled ?? false">
-        <ion-icon slot="start" name="save"></ion-icon>
-        Save
+    <ion-buttons class="ion-justify-content-around">
+      <ion-button size="large" color="primary" (click)="save()" [disabled]="game?.isSettled ?? false">
+        <ion-icon slot="icon-only" name="save"></ion-icon>
       </ion-button>
-      <ion-button color="secondary" (click)="cancel()">
-        <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
-        Cancel
+      <ion-button size="large" color="primary" (click)="cancel()">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
-      <ion-button color="primary" (click)="settle()" [disabled]="game?.isSettled ?? false">
-        <ion-icon slot="start" name="checkbox-outline"></ion-icon>
-        Settle
+      <ion-button size="large" color="primary" (click)="settle()" [disabled]="game?.isSettled ?? false">
+        <ion-icon slot="icon-only" name="checkbox-outline"></ion-icon>
       </ion-button>
-      <ion-button color="primary" (click)="customSettle()" [disabled]="game?.isSettled ?? false">
-        <ion-icon slot="start" name="checkbox-outline"></ion-icon>
-        Custom Settle
+      <ion-button size="large" color="primary" (click)="customSettle()" [disabled]="game?.isSettled ?? false">
+        <ion-icon slot="icon-only" name="shield-checkmark-outline"></ion-icon>
       </ion-button>
-      <ion-button color="primary" (click)="presentDeleteConfirm()">
-        <ion-icon slot="start" name="trash-outline"></ion-icon>
-        Delete
+      <ion-button size="large" color="primary" (click)="presentDeleteConfirm()">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
