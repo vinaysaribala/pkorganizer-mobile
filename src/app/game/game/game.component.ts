@@ -58,12 +58,13 @@ export class GameComponent implements OnInit, OnDestroy {
     });
   }
 
-  public static buildPlayerForm(model: any): FormGroup {
+  public static buildPlayerForm(model: any, game?: Game): FormGroup {
     return new FormBuilder().group({
       profileId: new FormControl({ value: model?.profileId, disabled: false }),
       name: new FormControl({ value: model?.name, disabled: true }),
       buyIns: new FormControl({ value: model?.buyIns, disabled: false }, [Validators.required, Validators.min(1)]),
       returnBuyIns: new FormControl({ value: model?.returnBuyIns, disabled: false }),
+      returnChips: new FormControl({ value: (model?.returnBuyIns * (game?.buyInPoints ?? 0)), disabled: false }),
     });
   }
 
@@ -201,7 +202,21 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   editPlayer(player: Player) {
-    this.playerForm = GameComponent.buildPlayerForm(player);
+    this.playerForm = GameComponent.buildPlayerForm(player, this.game);
+    this.playerForm.get('returnChips')?.valueChanges.pipe(takeUntil(this.destroying$)).subscribe({
+      next: (value: any) => {
+        let returnBuyIns = Number(value / (this.form?.get('buyInPoints')?.getRawValue() ?? this.game?.buyInPoints)).toFixed(2);
+        this.playerForm?.get('returnBuyIns')?.setValue(returnBuyIns, { emitEvent: false });
+      }
+    });
+
+    this.playerForm.get('returnBuyIns')?.valueChanges.pipe(takeUntil(this.destroying$)).subscribe({
+      next: (value: any) => {
+        let returnChips = Math.round(value * (this.form?.get('buyInPoints')?.getRawValue() ?? this.game?.buyInPoints));
+        this.playerForm?.get('returnChips')?.setValue(returnChips, { emitEvent: false });
+      }
+    });
+
     this.isModalOpen = true;
   }
 
