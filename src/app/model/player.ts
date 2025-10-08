@@ -5,5 +5,8 @@ export interface Player {
     buyIns: number,
     returnBuyIns?: number,
     balance?: number,
-    isSettled: boolean
+    isSettled: boolean,
+    isHost: boolean,
+    canAddExpenses: boolean,
+    expenseBuyIns?: number
   }

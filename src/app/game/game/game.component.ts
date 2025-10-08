@@ -53,6 +53,8 @@ export class GameComponent implements OnInit, OnDestroy {
       playDate: new FormControl({ value: model ? model.name : date, disabled: true }),
       buyInValue: new FormControl({ value: model ? model.buyInValue : 10, disabled: model?.isSettled }, [Validators.required]),
       buyInPoints: new FormControl({ value: model ? model.buyInPoints : 200, disabled: model?.isSettled }, [Validators.required]),
+      expenses: new FormControl({ value: model ? model.expenses : 0, disabled: model?.isSettled }, [Validators.required, Validators.min(0)]),
+      hostId: new FormControl({ value: model ? model.hostId : null, disabled: model?.isSettled }),
       isSettled: new FormControl({ value: model ? model.isSettled : false, disabled: true }, [Validators.required]),
       players: new FormControl({ value: model ? model.players : [], disabled: model?.isSettled }, [Validators.required]),
     });
@@ -65,6 +67,9 @@ export class GameComponent implements OnInit, OnDestroy {
       buyIns: new FormControl({ value: model?.buyIns, disabled: false }, [Validators.required, Validators.min(1)]),
       returnBuyIns: new FormControl({ value: model?.returnBuyIns, disabled: false }),
       returnChips: new FormControl({ value: (model?.returnBuyIns * (game?.buyInPoints ?? 0)), disabled: false }),
+      expenseBuyIns: new FormControl({ value: model?.expenseBuyIns, disabled: false }),
+      isHost: new FormControl({ value: model?.isHost, disabled: true }),
+      canAddExpenses: new FormControl({ value: model?.canAddExpenses, disabled: false }),
     });
   }
 
@@ -83,6 +88,7 @@ export class GameComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.form = GameComponent.buildForm(this.game);
+    this.expenseChanges();
     this.route.params.pipe(takeUntil(this.destroying$)).subscribe({
       next: (params: any) => {
         this.gameId = +params['id'] || 0;
@@ -112,12 +118,29 @@ export class GameComponent implements OnInit, OnDestroy {
     });
   }
 
+  expenseChanges() {
+    this.form?.get('expenses')?.valueChanges.pipe(takeUntil(this.destroying$)).subscribe({
+      next: (_: any) => {
+        this.game?.players.forEach((player: Player) => {
+          this.setPlayer(player);
+        });
+      }
+    });
+    this.form?.get('hostId')?.valueChanges.pipe(takeUntil(this.destroying$)).subscribe({
+      next: (_: any) => {
+        this.game?.players.forEach((player: Player) => {
+          this.setPlayer(player);
+        });
+      }
+    });
+  }
+
   loadProfiles() {
     this.service.getProfiles().pipe(takeUntil(this.destroying$)).subscribe({
       next: (profiles) => {
         if (profiles) {
           this.profiles = profiles;
-          this.players = profiles.map((d: any) => ({ profileId: d.id, buyIns: 1, isSettled: false, returnBuyIns: undefined, name: d.name, gameId: this.gameId, balance: undefined } as Player));
+          this.players = profiles.map((d: any) => ({ profileId: d.id, buyIns: 1, isSettled: false, returnBuyIns: undefined, name: d.name, gameId: this.gameId, balance: undefined, isHost: this.form?.get('hostId')?.value?.profileId === d.id, canAddExpenses: false } as Player));
           if (this.game?.players) {
             this.game?.players.forEach((player: Player) => {
               this.setPlayer(player);
@@ -134,8 +157,8 @@ export class GameComponent implements OnInit, OnDestroy {
 
   private setPlayer(model: Player) {
     let players = this.form?.get('players')?.getRawValue();
-    this.players = this.players.map(p => p.profileId === model.profileId ? { ...p, buyIns: model.buyIns, returnBuyIns: model.returnBuyIns, balance: model.returnBuyIns != null && model.returnBuyIns != undefined && model.returnBuyIns >= 0 ? model.returnBuyIns - model.buyIns : model.balance, isSettled: model.isSettled } : p);
-    players = players.map((p: Player) => p.profileId === model.profileId ? { ...p, buyIns: model.buyIns, returnBuyIns: model.returnBuyIns, balance: model.returnBuyIns != null && model.returnBuyIns != undefined && model.returnBuyIns >= 0 ? model.returnBuyIns - model.buyIns : model.balance, isSettled: model.isSettled, gameId: this.gameId } : p);
+    this.players = this.players.map(p => p.profileId === model.profileId ? { ...p, buyIns: model.buyIns, returnBuyIns: model.returnBuyIns, balance: model.returnBuyIns != null && model.returnBuyIns != undefined && model.returnBuyIns >= 0 ? model.returnBuyIns - model.buyIns - (model.expenseBuyIns ?? 0) + (model.isHost ? this.getTotalBuyInsFromContributors() : 0) : model.balance, isSettled: model.isSettled, isHost: this.form?.get('hostId')?.value?.profileId === model.profileId, canAddExpenses: model.canAddExpenses, expenseBuyIns: model.canAddExpenses ? this.form?.get('expenses')?.value : 0 } : p);
+    players = players.map((p: Player) => p.profileId === model.profileId ? { ...p, buyIns: model.buyIns, returnBuyIns: model.returnBuyIns, balance: model.returnBuyIns != null && model.returnBuyIns != undefined && model.returnBuyIns >= 0 ? model.returnBuyIns - model.buyIns - (model.expenseBuyIns ?? 0) + (model.isHost ? this.getTotalBuyInsFromContributors() : 0): model.balance, isSettled: model.isSettled, isHost: this.form?.get('hostId')?.value?.profileId === model.profileId, canAddExpenses: model.canAddExpenses, expenseBuyIns: model.canAddExpenses ? this.form?.get('expenses')?.value : 0, gameId: this.gameId } : p);
     this.form?.get('players')?.patchValue(players);
   }
 
@@ -246,7 +269,7 @@ export class GameComponent implements OnInit, OnDestroy {
   get totalBuyIns() {
     let players = this.form?.get('players')?.getRawValue();
     if (players) {
-      return players.reduce((sum: any, item: { buyIns: any; }) => sum + item.buyIns, 0)
+      return players.reduce((sum: any, item: { buyIns: any; expenseBuyIns?: any }) => sum + item.buyIns + (item.expenseBuyIns ?? 0), 0)
     } else {
       return 0;
     }
@@ -272,6 +295,19 @@ export class GameComponent implements OnInit, OnDestroy {
 
   profileName(profileId: number) {
     return this.profiles.find(p => p.id === profileId)?.name
+  }
+
+  getHostName(): string {
+    const hostId = this.form?.get('hostId')?.value;
+    if (hostId) {
+      const hostPlayer = this.players.find(p => p.profileId === hostId);
+      return hostPlayer ? hostPlayer.name : '';
+    }
+    return '';
+  }
+
+  compareWithHostFn(o1: any, o2: any): boolean {
+    return o1 && o2 ? o1.profileId === o2.profileId : o1 === o2;
   }
 
   async settle() {
@@ -391,11 +427,11 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   getLossPlayers(): Player[] {
-    return this.players.filter(p => p.balance  && p.balance + ((this.game?.settlements?.filter(s => s.fromPlayerId === p.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0)) / this.game?.buyInValue!) < 0)
+    return this.players.filter(p => p.balance && p.balance + ((this.game?.settlements?.filter(s => s.fromPlayerId === p.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0)) / this.game?.buyInValue!) < 0)
   }
 
   getGainPlayers(): Player[] {
-    return this.players.filter(p => p.balance  && p.balance - ((this.game?.settlements?.filter(s => s.toPlayerId === p.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0)) / this.game?.buyInValue!) > 0)
+    return this.players.filter(p => p.balance && p.balance - ((this.game?.settlements?.filter(s => s.toPlayerId === p.profileId).reduce((sum: any, item: { amount: number; }) => sum + item.amount, 0)) / this.game?.buyInValue!) > 0)
   }
 
   saveCustomSettle() {
@@ -455,5 +491,32 @@ export class GameComponent implements OnInit, OnDestroy {
 
   segmentChanged(_: any) {
     this.cdr.detectChanges();
+  }
+
+  incrementExpenses() {
+    const currentExpenses = this.form?.get('expenses')?.value || 0;
+    this.form?.get('expenses')?.setValue(currentExpenses + 1);
+  }
+
+  decrementExpenses() {
+    const currentExpenses = this.form?.get('expenses')?.value || 0;
+    const newExpenses = Math.max(0, currentExpenses - 1);
+    this.form?.get('expenses')?.setValue(newExpenses);
+  }
+
+  navigateToAddPlayer() {
+    this.router.navigate(['/profile/add'], { queryParams: { returnUrl: this.router.url } });
+  }
+
+  getContributorText(): string {
+    return `BuyIn(s): ${this.getTotalBuyInsFromContributors()}  Amount: $${this.getTotalAmountFromContributors()}`;
+  }
+
+  getTotalBuyInsFromContributors(): number {
+    return (this.form?.get('expenses')?.value ?? 0) * (this.form?.get('players')?.value ?? []).filter((player: any) => player.canAddExpenses).length;
+  }
+
+  getTotalAmountFromContributors(): number {
+    return this.getTotalBuyInsFromContributors() * (this.form?.get('buyInValue')?.value ?? 0);
   }
 }

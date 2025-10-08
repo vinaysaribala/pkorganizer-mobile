@@ -23,13 +23,38 @@
           [disabled]="game?.isSettled ?? false"></ion-input>
       </ion-item>
       <ion-item>
-        <ion-input label="BuyIn Chips" type="number" step="100" min="100" labelPlacement="floating"
+        <ion-input label="BuyIn chips" type="number" step="100" min="100" labelPlacement="floating"
           errorText="BuyIn chips are required." formControlName="buyInPoints"
           [disabled]="game?.isSettled ?? false"></ion-input>
       </ion-item>
       <ion-item>
+        <ion-input label="Per player buyIn(s) contribution to expenses" type="number" step="1" min="0" labelPlacement="floating"
+          errorText="Expenses are required." formControlName="expenses"
+          [disabled]="game?.isSettled ?? false"></ion-input>
+        <ion-button slot="end" fill="clear" size="small" (click)="decrementExpenses()"
+          [disabled]="game?.isSettled ?? false">
+          <ion-icon name="remove"></ion-icon>
+        </ion-button>
+        <ion-button slot="end" fill="clear" size="small" (click)="incrementExpenses()"
+          [disabled]="game?.isSettled ?? false">
+          <ion-icon name="add"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-input label="Total amount contributed to expenses" type="text" labelPlacement="floating" readonly
+          value="{{ getContributorText() }}"></ion-input>
+      </ion-item>
+      <ion-item>
         <ion-checkbox labelPlacement="floating" formControlName="isSettled" [disabled]="true">Is
           Settled</ion-checkbox>
+      </ion-item>
+      <ion-item>
+        <ion-select placeholder="Select host" formControlName="hostId" label="Host" labelPlacement="floating"
+          [multiple]="false" [compareWith]="compareWithHostFn" [disabled]="game?.isSettled ?? false">
+          @for (player of players; track player) {
+          <ion-select-option [value]="player">{{ player.name }}</ion-select-option>
+          }
+        </ion-select>
       </ion-item>
       <ion-item>
         <ion-select placeholder="Select players" formControlName="players" label="Players" labelPlacement="floating"
@@ -53,18 +78,21 @@
       <ion-segment-content id="playersegment">
         <ion-item-divider class="ion-padding">
           <ion-label>Players</ion-label>
-          <ion-badge slot="end" color="primary">BuyIn's</ion-badge>
-          <ion-badge slot="end" color="warning">Returns</ion-badge>
-          <ion-badge slot="end" color="success">Balance</ion-badge>
+          <ion-badge slot="end" color="primary" class="small-badge">BuyIn's + Exp</ion-badge>
+          <ion-badge slot="end" color="warning" class="small-badge">Returns</ion-badge>
+          <ion-badge slot="end" color="success" class="small-badge">Balance</ion-badge>
         </ion-item-divider>
         <ion-list>
           <ion-item *ngFor="let player of form.get('players')?.getRawValue()">
             <ion-button fill="clear" expand="block" (click)="editPlayer(player)">
               <ion-icon slot="start" name="pencil-outline"></ion-icon>
               {{player.name}}
+              <ion-icon slot="end" color="success" *ngIf="player.canAddExpenses" name="logo-usd"></ion-icon>
+              <ion-icon slot="end" color="warning" *ngIf="player.isHost" name="logo-react"></ion-icon>
+              <ion-icon slot="end" color="danger" *ngIf="!player.isHost && !player.canAddExpenses" name="logo-google"></ion-icon>
             </ion-button>
-            <ion-badge slot="end" color="primary">{{player.buyIns}}</ion-badge>
-            <ion-badge slot="end" color="warning">{{player.returnBuyIns ?? 0}}</ion-badge>
+            <ion-badge slot="end" color="primary">{{player.buyIns}} + {{player.expenseBuyIns ?? 0}}</ion-badge>
+            <ion-badge slot="end" color="warning">{{player.returnBuyIns ?? 0}} + {{player.isHost ? getTotalBuyInsFromContributors() : '' }}</ion-badge>
             <ion-badge slot="end"
               [color]="(player.balance ?? 0) >= 0 ? player.balance > 0 ? 'success' : 'light' : 'danger'">{{player.balance
               ?? 0}}</ion-badge>
@@ -119,12 +147,25 @@
               <ion-input label="Return Chips" type="number" min="0" labelPlacement="floating"
                 errorText="Returns Chips are required." formControlName="returnChips"></ion-input>
             </ion-item>
+            <ion-item>
+              <ion-input label="Expense BuyIn's" type="number" step="1" min="0" labelPlacement="floating"
+                formControlName="expenseBuyIns"></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-checkbox labelPlacement="floating" formControlName="isHost" [disabled]="true">Is
+                Host</ion-checkbox>
+            </ion-item>
+            <ion-item>
+              <ion-checkbox labelPlacement="floating" formControlName="canAddExpenses">Can
+                Add Expenses</ion-checkbox>
+            </ion-item>
           </ion-list>
         </div>
       </ion-content>
       <ion-footer>
         <ion-buttons>
-          <ion-button slot="end" size="large" color="primary" (click)="savePlayer()" [disabled]="game?.isSettled ?? false">
+          <ion-button slot="end" size="large" color="primary" (click)="savePlayer()"
+            [disabled]="game?.isSettled ?? false">
             <ion-icon slot="start" name="save"></ion-icon>
             Save
           </ion-button>
@@ -150,8 +191,8 @@
         <div *ngIf="settleForm" [formGroup]="settleForm" class="ion-padding">
           <ion-list>
             <ion-item>
-              <ion-select placeholder="Select From player" formControlName="fromPlayerId" label="From Player" labelPlacement="floating"
-                [multiple]="false" errorText="Player is required."
+              <ion-select placeholder="Select From player" formControlName="fromPlayerId" label="From Player"
+                labelPlacement="floating" [multiple]="false" errorText="Player is required."
                 [compareWith]="compareWithFn" [disabled]="game?.isSettled ?? false">
                 @for (player of getLossPlayers(); track player) {
                 <ion-select-option [value]="player">{{ player.name }}</ion-select-option>
@@ -159,8 +200,8 @@
               </ion-select>
             </ion-item>
             <ion-item>
-              <ion-select placeholder="Select To player" formControlName="toPlayerId" label="To Player" labelPlacement="floating"
-                [multiple]="false" errorText="Player is required."
+              <ion-select placeholder="Select To player" formControlName="toPlayerId" label="To Player"
+                labelPlacement="floating" [multiple]="false" errorText="Player is required."
                 [compareWith]="compareWithFn" [disabled]="game?.isSettled ?? false">
                 @for (player of getGainPlayers(); track player) {
                 <ion-select-option [value]="player">{{ player.name }}</ion-select-option>
@@ -176,7 +217,8 @@
       </ion-content>
       <ion-footer>
         <ion-buttons>
-          <ion-button slot="end" size="large" color="primary" (click)="saveCustomSettle()" [disabled]="game?.isSettled ?? false">
+          <ion-button slot="end" size="large" color="primary" (click)="saveCustomSettle()"
+            [disabled]="game?.isSettled ?? false">
             <ion-icon slot="start" name="save"></ion-icon>
             Save
           </ion-button>
@@ -195,8 +237,8 @@
       <ion-button size="large" color="primary" (click)="save()" [disabled]="game?.isSettled ?? false">
         <ion-icon slot="icon-only" name="save"></ion-icon>
       </ion-button>
-      <ion-button size="large" color="primary" (click)="cancel()">
-        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      <ion-button size="large" color="primary" (click)="navigateToAddPlayer()">
+        <ion-icon slot="icon-only" name="person-add"></ion-icon>
       </ion-button>
       <ion-button size="large" color="primary" (click)="settle()" [disabled]="game?.isSettled ?? false">
         <ion-icon slot="icon-only" name="checkbox-outline"></ion-icon>
@@ -206,6 +248,9 @@
       </ion-button>
       <ion-button size="large" color="primary" (click)="presentDeleteConfirm()">
         <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+      <ion-button size="large" color="primary" (click)="cancel()">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

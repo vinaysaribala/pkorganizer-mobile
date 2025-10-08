@@ -6,6 +6,8 @@ export interface Game {
     playDate: string,
     buyInValue: number,
     buyInPoints: number,
+    expenses: number,
+    hostId?: number,
     totalBuyIns: number,
     isSettled: boolean,
     playersCount: number,
