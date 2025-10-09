@@ -278,7 +278,7 @@ export class GameComponent implements OnInit, OnDestroy {
   get totalReturnBuyIns() {
     let players = this.form?.get('players')?.getRawValue();
     if (players) {
-      return players.reduce((sum: any, item: { returnBuyIns?: any }) => sum + (item.returnBuyIns ?? 0), 0)
+      return players.reduce((sum: any, item: { returnBuyIns?: any }) => sum + (item.returnBuyIns ?? 0), 0) + this.getTotalBuyInsFromContributors();
     } else {
       return 0;
     }

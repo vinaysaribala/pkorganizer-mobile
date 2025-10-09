@@ -1,0 +1,26 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      Player Statistics
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+<ion-content>
+  <div class="ion-padding chart-container">
+    <ion-list class="margin-bottom">
+      <ion-item>
+        <ion-select [multiple]="true" [(ngModel)]="selectedPlayerIds" (ionChange)="onPlayerSelectionChange()" label="Players" labelPlacement="floating" [selectedText]="getSelectedPlayersText()">
+          <ion-select-option *ngFor="let player of profiles" [value]="player.id">{{ player.name }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="'bar'">
+        </canvas>
+      </ion-item>
+    </ion-list>
+  </div>
+</ion-content>

@@ -91,8 +91,8 @@
               <ion-icon slot="end" color="warning" *ngIf="player.isHost" name="logo-react"></ion-icon>
               <ion-icon slot="end" color="danger" *ngIf="!player.isHost && !player.canAddExpenses" name="logo-google"></ion-icon>
             </ion-button>
-            <ion-badge slot="end" color="primary">{{player.buyIns}} + {{player.expenseBuyIns ?? 0}}</ion-badge>
-            <ion-badge slot="end" color="warning">{{player.returnBuyIns ?? 0}} + {{player.isHost ? getTotalBuyInsFromContributors() : '' }}</ion-badge>
+            <ion-badge slot="end" color="primary">{{player.buyIns}} {{player.expenseBuyIns ? '+ ' + player.expenseBuyIns : ''}}</ion-badge>
+            <ion-badge slot="end" color="warning">{{player.returnBuyIns ?? 0}} {{player.isHost ? '+ ' + getTotalBuyInsFromContributors() : '' }}</ion-badge>
             <ion-badge slot="end"
               [color]="(player.balance ?? 0) >= 0 ? player.balance > 0 ? 'success' : 'light' : 'danger'">{{player.balance
               ?? 0}}</ion-badge>

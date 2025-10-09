@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { HomePage } from './home.page';
 
 import { HomePageRoutingModule } from './home-routing.module';
+import { StatsPage } from './stats.page/stats.page';
+import { BaseChartDirective } from 'ng2-charts';
 
 
 @NgModule({
@@ -12,8 +14,9 @@ import { HomePageRoutingModule } from './home-routing.module';
     CommonModule,
     FormsModule,
     IonicModule,
-    HomePageRoutingModule
+    HomePageRoutingModule,
+    BaseChartDirective
   ],
-  declarations: [HomePage]
+  declarations: [HomePage, StatsPage]
 })
 export class HomePageModule {}
