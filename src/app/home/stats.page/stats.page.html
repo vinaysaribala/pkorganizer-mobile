@@ -9,18 +9,20 @@
     </ion-title>
   </ion-toolbar>
 </ion-header>
-<ion-content>
-  <div class="ion-padding chart-container">
-    <ion-list class="margin-bottom">
-      <ion-item>
-        <ion-select [multiple]="true" [(ngModel)]="selectedPlayerIds" (ionChange)="onPlayerSelectionChange()" label="Players" labelPlacement="floating" [selectedText]="getSelectedPlayersText()">
-          <ion-select-option *ngFor="let player of profiles" [value]="player.id">{{ player.name }}</ion-select-option>
-        </ion-select>
-      </ion-item>
-      <ion-item>
-        <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="'bar'">
+<ion-content [fullscreen]="true">
+  <div class="page-content">
+    <div class="ion-padding chart-wrapper">
+      <ion-list class="margin-bottom">
+        <ion-item>
+          <ion-select [multiple]="true" [(ngModel)]="selectedPlayerIds" (ionChange)="onPlayerSelectionChange()" label="Players" labelPlacement="floating" [selectedText]="getSelectedPlayersText()">
+            <ion-select-option *ngFor="let player of profiles" [value]="player.id">{{ player.name }}</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </ion-list>
+      <div class="chart-container">
+        <canvas baseChart [data]="barChartData" [options]="barChartOptions" chartType="bar">
         </canvas>
-      </ion-item>
-    </ion-list>
+      </div>
+    </div>
   </div>
 </ion-content>

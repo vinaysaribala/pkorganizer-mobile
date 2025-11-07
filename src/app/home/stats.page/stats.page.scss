@@ -9,3 +9,62 @@ canvas {
   height: 100% !important;
   width: 100% !important;
 }
+
+/* Make host a flex column so children can expand and shrink */
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0; /* allow children to shrink in flex layout */
+    }
+
+    /* Ensure the page content is a flex column and can use full height */
+    ion-content, .page-content {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden; /* keep scrolling inside inner wrapper */
+    }
+
+    /* Wrappers: let the chart-wrapper take remaining space and be scrollable */
+    .ion-padding.chart-wrapper {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;     /* crucial for correct flex sizing */
+      max-height: 100%;  /* don't exceed parent's height */
+      overflow: auto;    /* enable scroll when chart content overflows */
+    }
+
+    /* Keep the controls (ion-list) from forcing the chart too small: let them size naturally */
+    ion-list.margin-bottom {
+      flex: 0 0 auto;
+    }
+
+    /* Chart container: allow it to grow based on chart content */
+    .chart-container {
+      flex: 0 0 auto;  /* don't force flex growth, let chart size naturally */
+      min-height: 400px; /* minimum height to see chart */
+      display: block;    /* simple block layout */
+      position: relative; /* for Chart.js positioning */
+    }
+
+    /* Allow canvas to size based on chart content (many bars = taller canvas) */
+    canvas {
+      width: 100% !important;
+      height: auto !important; /* let Chart.js calculate height based on data */
+      min-height: 400px !important; /* ensure minimum visibility */
+      max-height: none !important;
+      display: block;
+    }
+
+    /* Optional: scrollbar styling */
+    .ion-padding.chart-wrapper::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .ion-padding.chart-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+    }

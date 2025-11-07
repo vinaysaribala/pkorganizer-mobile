@@ -97,8 +97,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       await this.presentToast('Profile save success!', 'checkmark-outline');
       this.profile = undefined;
       this.router.navigate(['/profile']);
-    } catch (error) {
-      await this.presentToast('Profile save failed!', 'close-outline');
+    } catch (error: any) {
+      await this.presentToast('Profile save failed!' + error.message, 'close-outline');
     }
   }
 
