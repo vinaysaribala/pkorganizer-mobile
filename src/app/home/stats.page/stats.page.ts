@@ -37,9 +37,8 @@ export class StatsPage implements OnInit {
   }
   calculateBalances(games: Game[], profiles: Profile[]) {
     games.filter(game => game.isSettled).forEach(game => {
-      game.settlements.forEach(settlement => {
-        this.balances[settlement.fromPlayerId] = (this.balances[settlement.fromPlayerId] || 0) - settlement.amount;
-        this.balances[settlement.toPlayerId] = (this.balances[settlement.toPlayerId] || 0) + settlement.amount;
+      game.players.forEach(player => {
+        this.balances[player.profileId] = (((player.buyIns ?? 0) - (player.returnBuyIns ?? 0)) * game.buyInValue) + (this.balances[player.profileId] || 0);
       });
     });
 
